@@ -1,11 +1,13 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" CodeFile="Default.aspx.cs" Inherits="_Default" %>
+<%@ Page Language="C#" AutoEventWireup="true" CodeFile="Default.aspx.cs" Inherits="_Default" %>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
-<head runat="server">
+<head id="Head1" runat="server">
     <title></title>
-    <script type='text/javascript' src='http://code.jquery.com/jquery-1.11.2.min.js'></script>
-     
+
+    <script src="jquery-1.8.3.js" type="text/javascript"></script>
+
+    <script src="jquery.maskedinput.min.js" type="text/javascript"></script> 
     <style>
         /* Table styles */
         table {
@@ -34,13 +36,19 @@
             width: 400px;
         }
     </style>
-<script>
-  $(function() {
-         $("#txtBitis").attr("placeholder", "GUN/AY/YIL");
-        $("#txtBasla").attr("placeholder", "GUN/AY/YIL");
-});</script></head>
-<body>
     
+</head>
+<body>
+        <script type="text/javascript">
+        $(function() {
+        $("#txtBitis").mask("99/99/9999 99:99:99");
+        $("#txtBasla").mask("99/99/9999 99:99:99");
+        $("#txtCallBack").mask("99/99/9999 99:99:99");
+            
+ 
+       //  $("#txtBitis").attr("placeholder", "GUN/AY/YIL");
+      //  $("#txtBasla").attr("placeholder", "GUN/AY/YIL");
+});</script>
     <form id="form1" runat="server">
         <div>
             <asp:Label ID="lblWarning" runat="server"></asp:Label>
@@ -64,7 +72,12 @@
                                             <td>
                                                 <asp:TextBox ID="txtIMSearch" runat="server"></asp:TextBox></td>
                                             <td>
-                                                <asp:Button ID="btnIMSearch" runat="server" Text="IM ARA" OnClick="btnIMSearch_Click" /></td>
+                                          <%--    <asp:Button ID="btnIMSearch runat="server" Text="IM ARA" onclick="btnIMSearch_Click" />  </td>
+                                                <asp:Button ID="btnIMSearchList" runat="server" Text="IM ARA" onclick="btnIMSearchList_Click"  />--%>
+                                                <asp:Button ID="btnIMSearch" runat="server" Text="IM ARA" 
+                                                    onclick="btnIMSearch_Click" />
+                                                
+                                                </td>
                                         </tr>
                                     </table>
                                 </td>
@@ -77,12 +90,13 @@
                             <td>Bitiş:</td><td>
                             <asp:TextBox ID="txtBitis" CssClass="date" runat="server"></asp:TextBox></td></tr>
                             <tr><td colspan="4" >
-                                <asp:Button ID="btnRapor" runat="server" Text="HAZIRLA" OnClick="btnRapor_Click" /></td></tr>
-                        </table>
+                                <asp:Button ID="btnRapor" runat="server" Text="HAZIRLA" OnClick="btnRapor_Click" /></td>
+                                 </tr>
+                        </table> <a href="PregrineData.aspx">Data Yükleme</a>
                     </td>
                 </tr>
                 <tr><td colspan="2"><h3>ONLINE AKSIYONLAR</h3>
-                    <asp:Label ID="lblRapor" runat="server" ></asp:Label></td></tr>
+                    <asp:Button ID="btnONLINE" runat="server" Text="Güncelle" onclick="btnONLINE_Click" /><br />  <asp:Label ID="lblRapor" runat="server" ></asp:Label></td></tr>
             </table>
             <table id="tblPREGRINE" runat="server">
                 <tr>
@@ -104,16 +118,28 @@
                                 <th colspan="2"></th>
                             </tr>
                             <tr>
+                                <td>Ulaşma</td>
+                                <td>
+                                    <asp:DropDownList ID="ddlUlasma" runat="server" Height="31px" Width="300px"></asp:DropDownList></td>
+                            </tr> <tr>
+                                <th colspan="2"></th>
+                            </tr>
+                            <tr>
                                 <td>Aksiyon</td>
                                 <td>
-                                    <asp:DropDownList ID="ddlAksLst" runat="server" Height="17px" Width="300px"></asp:DropDownList></td>
+                                    <asp:DropDownList ID="ddlAksLst" runat="server" Height="31px" Width="300px"></asp:DropDownList></td>
                             </tr>
                             <tr>
                                 <th colspan="2"></th>
-                            </tr> <tr>
-                               <td>CALL BACK</td>
+                            </tr>    <tr>
+                                <td>CallBack</td>
                                 <td>
-                                    <asp:TextBox ID="txtCallBack" runat="server" Text="2015-04-12 23:28:26.457"></asp:TextBox></td>
+                                    <asp:TextBox ID="txtCallBack" runat="server" Width="300px"></asp:TextBox>
+                                
+                                </td>
+                            </tr>  
+                            <tr>
+                                <th colspan="2"></th>
                             </tr>
                             <tr>
                                 <td colspan="2">
@@ -128,8 +154,7 @@
                 <tr>
                     <td colspan="2">
                         <hr />
-                        GECMIS MEMOLARI<asp:Label ID="lblHistory" runat="server"></asp:Label>
-                    </td>
+                        GECMIS MEMOLARI<asp:Label ID="lblHistory" runat="server"></asp:Label></td>
                 </tr>
             </table>
         </div>
