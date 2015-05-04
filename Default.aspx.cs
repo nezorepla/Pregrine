@@ -1,17 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
+using System.Collections;
+using System.Configuration;
 using System.Data;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Web;
+using System.Web.Security;
 using System.Web.UI;
+using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
-
+using System.Web.UI.WebControls.WebParts;
+using System.Xml.Linq;
+using System.Text;
 
 public partial class _Default : System.Web.UI.Page
 {
-    const string USER = "A25318";
+    public string USER = HttpContext.Current.User.Identity.Name.ToUpper().Replace("İ", "I").Substring(7, 6).ToString();
     public static string HTMLTableString(DataTable dt, string id, string css)
     {
         String RVl = "";
@@ -85,10 +88,10 @@ public partial class _Default : System.Web.UI.Page
 
         //  string user = "A25318";
 
-        DataTable dt0 = PCL.MsSQL_DBOperations.GetData("EXEC [PTS_PRG_SP_AKTIVE] '" + USER + "'", "dev");
+        DataTable dt0 = PCL.MsSQL_DBOperations.GetData("EXEC [PTS_PRG_SP_AKTIVE] '" + USER + "'", "sqlConn");
         string rv = dt0.Rows[0][0].ToString();
         string logout = dt0.Rows[0][1].ToString();
-        lblWarning.Text = "logout zamanı" + logout;
+        lblWarning.Text = "Logout Zamanı: " + logout;
         InitArea(rv);
     }
     public void InitArea(string rv)
@@ -99,8 +102,10 @@ public partial class _Default : System.Web.UI.Page
             //AKTIF KAYIT YOK, YENI KAYIT CAGIRILSIN DIYE ALAN AKTIFLESTIRILECEK..
             tblGet.Visible = true;
             tblPREGRINE.Visible = false;
-            Session["IM"] = null; txtMemo.Text = null;
+            Session["IM"] = null; Session["PID"] = null;
+            txtMemo.Text = null;
             lblWarning.Text = null;
+            txtCallBack.Text = null;
         }
         else
         {
@@ -109,16 +114,17 @@ public partial class _Default : System.Web.UI.Page
             tblPREGRINE.Visible = true;
             FillDDL();
             Session["IM"] = rv;
+            Session["PID"] = rv;
             //ILK ONCE TEMEL BILGILER 
-            DataTable dt1 = PCL.MsSQL_DBOperations.GetData("EXEC [PTS_PRG_SP_PREGRINE] '" + rv + "'", "dev");
+            DataTable dt1 = PCL.MsSQL_DBOperations.GetData("EXEC [PTS_PRG_SP_PREGRINE] '" + rv + "'", "sqlConn");
             if (dt1.Rows.Count > 0)
             {
 
-                DataTable dt0 = PCL.MsSQL_DBOperations.GetData("EXEC [PTS_PRG_SP_AKTIVE] '" + USER + "'", "dev");
+                DataTable dt0 = PCL.MsSQL_DBOperations.GetData("EXEC [PTS_PRG_SP_AKTIVE] '" + USER + "'", "sqlConn");
                 string logout = dt0.Rows[0][1].ToString();
                 lblWarning.Text = "logout zamanı" + logout;
 
-                DataTable dt3 = PCL.MsSQL_DBOperations.GetData("EXEC [PTS_PRG_SP_HISTORY] '" + rv + "'", "dev");
+                DataTable dt3 = PCL.MsSQL_DBOperations.GetData("EXEC [PTS_PRG_SP_HISTORY] '" + rv + "'", "sqlConn");
 
                 lblPregrineArea.Text = HTMLTableString(HTMLTransposedTable(dt1), "PRG_Tbl", "Prg_Tbl");
                 lblHistory.Text = HTMLTableString(dt3, "PRG_Hst", "PRG_Hst");
@@ -136,7 +142,7 @@ public partial class _Default : System.Web.UI.Page
     {
         //BUTONA BASILDI TEPEDEN BIRISI GELICEK
 
-        DataTable dt2 = PCL.MsSQL_DBOperations.GetData("EXEC [PTS_PRG_SP_IM] '" + USER + "'", "dev");
+        DataTable dt2 = PCL.MsSQL_DBOperations.GetData("EXEC [PTS_PRG_SP_IM] '" + USER + "'", "sqlConn");
         string rv = dt2.Rows[0][0].ToString();
         InitArea(rv);
     }
@@ -145,13 +151,13 @@ public partial class _Default : System.Web.UI.Page
     {
         /*
          CREATE TABLE [dbo].[PTS_PRG_DEF_ACTLIST](
-	    [INTCODE] [int] IDENTITY(1,1) NOT NULL,
-	    [ACT] [varchar](50) NOT NULL,
-	    [ISRPC] [bit] NOT NULL
+	   [INTCODE] [int] IDENTITY(1,1) NOT NULL,
+	   [ACT] [varchar](50) NOT NULL,
+	   [ISRPC] [bit] NOT NULL
          ) ON [PRIMARY]
        */
         ddlAksLst.Items.Clear();
-        DataTable dtOPType = PCL.MsSQL_DBOperations.GetData("SELECT * FROM PTS_PRG_DEF_ACTLIST", "dev");
+        DataTable dtOPType = PCL.MsSQL_DBOperations.GetData("EXEC  PTS_PRG_SP_ACTLIST", "sqlConn");
         ListItem li = new ListItem("Seçiniz", "0");
         ddlAksLst.Items.Add(li);
         foreach (DataRow drState in dtOPType.Rows)
@@ -162,18 +168,35 @@ public partial class _Default : System.Web.UI.Page
         ddlAksLst.Enabled = true;
         ddlAksLst.SelectedIndex = 0;
 
+
+
+        ddlUlasma.Items.Clear();
+        DataTable dtuType = PCL.MsSQL_DBOperations.GetData("SELECT * FROM PTS_PRG_DEF_ULSLST", "sqlConn");
+        ListItem li2 = new ListItem("Seçiniz", "0");
+        ddlUlasma.Items.Add(li2);
+        foreach (DataRow dru in dtuType.Rows)
+        {
+            li2 = new ListItem(dru["ACT"].ToString(), dru["INTCODE"].ToString());
+            ddlUlasma.Items.Add(li2);
+        }
+        ddlUlasma.Enabled = true;
+        ddlUlasma.SelectedIndex = 0;
+
+
+        
     }
     protected void btnSendAks_Click(object sender, EventArgs e)
     {
+        string q = "EXEC PTS_PRG_SP_ACT '" + USER + "','" + Session["IM"].ToString() + "','" + txtMemo.Text.Replace("'"," ").ToString() + "'," + ddlAksLst.SelectedValue.Trim() + "," + ddlUlasma.SelectedValue.Trim() + ",'" + txtCallBack.Text.ToString().Trim() + "'";
         if (Session["IM"] != null)
         {
-            PCL.MsSQL_DBOperations.ExecuteSQLStr("EXEC PTS_PRG_SP_ACT '" + USER + "','" + Session["IM"].ToString() + "','" + txtMemo.Text.ToString() + "'," + ddlAksLst.SelectedValue.Trim(), "dev");
+            PCL.MsSQL_DBOperations.ExecuteSQLStr(q, "sqlConn");
             CheckActive();
         }
         else
         {
 
-            lblWarning.Text = "logout olmuş, kaydedilemedi.";
+            lblWarning.Text = "<h3>Logout olmuş, kaydedilemedi.</h3>";
         }
     }
     protected void btnExit_Click(object sender, EventArgs e)
@@ -182,94 +205,58 @@ public partial class _Default : System.Web.UI.Page
          + " WHERE UID= '" + USER + "'"
          + " AND LOGOUT>GETDATE() "
          + "  AND IM='" + Session["IM"].ToString() + "' ;";
-        PCL.MsSQL_DBOperations.ExecuteSQLStr(query, "dev");
+        PCL.MsSQL_DBOperations.ExecuteSQLStr(query, "sqlConn");
         CheckActive();
     }
     protected void btnIMSearch_Click(object sender, EventArgs e)
     {
         lblWarning.Text = null;
-        DataTable dt2 = PCL.MsSQL_DBOperations.GetData("EXEC [PTS_PRG_SP_IMSEARCH] '" + txtIMSearch.Text.ToString() + "', '" + USER + "'", "dev");
+        DataTable dt2 = PCL.MsSQL_DBOperations.GetData("EXEC [PTS_PRG_SP_IMSEARCH] '" + txtIMSearch.Text.ToString() + "', '" + USER + "'", "sqlConn");
         string rv = dt2.Rows[0][0].ToString();
         txtIMSearch.Text = null;
-        if (rv.Substring(0, 1) == "A")
+        if (dt2.Rows.Count > 0&&rv.Length >5)
         {
-            Page.ClientScript.RegisterStartupScript(this.GetType(), "ShowRetval", "alert('Bu IM şu anda " + rv + " tarafından kullanılıyor.');", true);
+
+            if (rv.Substring(0, 1) == "A")
+            {
+                Page.ClientScript.RegisterStartupScript(this.GetType(), "ShowRetvalll", "alert('Bu IM şu anda " + rv + " tarafından kullanılıyor.');", true);
+            }
+            else
+            {
+
+                InitArea(rv);
+            }
         }
         else
         {
-
-            InitArea(rv);
+            tblGet.Visible = true;
+            tblPREGRINE.Visible = false;
+            Session["IM"] = null; txtMemo.Text = null; txtIMSearch.Text = null;
+            lblWarning.Text = "<h3>Kayıt Bulunamadı</h3>";
         }
     }
     public void RprOnline()
     {
 
-        DataTable dt4 = PCL.MsSQL_DBOperations.GetData("EXEC [PTS_PRG_SP_ONLINE]", "dev");
+        DataTable dt4 = PCL.MsSQL_DBOperations.GetData("EXEC [PTS_PRG_SP_ONLINE]", "sqlConn");
 
         lblRapor.Text = HTMLTableString(dt4, "PRG_oNL", "PRG_oNL");
 
     }
     protected void btnRapor_Click(object sender, EventArgs e)
     {
-        string path = string.Concat(@"C:\TempFiles\", "vvv.csv");
-        DataTable dt5 = PCL.MsSQL_DBOperations.GetData("EXEC [PTS_PRG_SP_ONLINE]", "dev");
-        CreateCSVFile(dt5, path);
+        DataTable dt5 = PCL.MsSQL_DBOperations.GetData("EXEC [PTS_PRG_SP_GETRPR] '" + txtBasla.Text.ToString().Trim() + "','" + txtBitis.Text.ToString().Trim() + "'", "sqlConn");
+
+        lblRapor.Text = HTMLTableString(dt5, "PRG_GETRPR", "PRG_GETRPR");
     }
 
 
 
-    public void CreateCSVFile(DataTable dt, string strFilePath)
+    protected void btnONLINE_Click(object sender, EventArgs e)
     {
-        try
-        {
-            // Create the CSV file to which grid data will be exported.
-            StreamWriter sw = new StreamWriter(strFilePath, false);
-            // First we will write the headers.
-            //DataTable dt = m_dsProducts.Tables[0];
-            int iColCount = dt.Columns.Count;
-            for (int i = 0; i < iColCount; i++)
-            {
-                sw.Write(dt.Columns[i]);
-                if (i < iColCount - 1)
-                {
-                    sw.Write(",");
-                }
-            }
-            sw.Write(sw.NewLine);
-
-            // Now write all the rows.
-
-            foreach (DataRow dr in dt.Rows)
-            {
-                for (int i = 0; i < iColCount; i++)
-                {
-                    if (!Convert.IsDBNull(dr[i]))
-                    {
-                        sw.Write(dr[i].ToString());
-                    }
-                    if (i < iColCount - 1)
-                    {
-                        sw.Write(",");
-                    }
-                }
-
-                sw.Write(sw.NewLine);
-            }
-            sw.Close();
-        }
-        catch (Exception ex)
-        {
-            throw ex;
-        }
+        RprOnline();
     }
-
-
-
-
-
-
-
-
-
-
 }
+
+
+
